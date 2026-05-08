@@ -163,3 +163,10 @@ Route::get('/yearly_stats/getYearlyStatsByPlayerId/{player_id}', [App\Http\Contr
 Route::get('/yearly_stats/getYearlyStatsBySeason/{season}', [App\Http\Controllers\YearlyStatsController::class, 'getYearlyStatsBySeason']);
 Route::put('/yearly_stats/update/{id}', [App\Http\Controllers\YearlyStatsController::class, 'updateYearlyStat']);
 Route::delete('/yearly_stats/delete/{id}', [App\Http\Controllers\YearlyStatsController::class, 'deleteYearlyStat']);
+
+// Logging Routes
+Route::post('/logs/create', [App\Http\Controllers\LogController::class, 'create']);
+Route::get('/logs/getLogById/{id}', [App\Http\Controllers\LogController::class, 'getLogById']);
+Route::get('/logs/getLogsByLeagueId/{league_id}', [App\Http\Controllers\LogController::class, 'getLogsByLeagueId']);
+Route::get('/logs/getLogsByLeagueMemberId/{league_member_id}', [App\Http\Controllers\LogController::class, 'getLogsByLeagueMemberId']);
+Route::delete('/logs/deleteLog/{id}', [App\Http\Controllers\LogController::class, 'deleteLog']);

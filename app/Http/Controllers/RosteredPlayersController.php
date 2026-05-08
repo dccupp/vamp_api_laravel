@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\RosteredPlayer;
+use App\Models\LeagueMember;
+use App\Models\Log;
 use Illuminate\Http\Request;
 
 class RosteredPlayersController extends Controller
@@ -16,12 +18,31 @@ class RosteredPlayersController extends Controller
             'is_rostered'      => 'sometimes|boolean',
         ]);
 
-        $rosteredPlayer = RosteredPlayer::create([
-            'league_member_id' => $request->league_member_id,
-            'player_id'        => $request->player_id,
-            'roster_position'  => $request->roster_position,
-            'is_rostered'      => $request->input('is_rostered', 1),
-        ]);
+        $rosteredPlayer = RosteredPlayer::updateOrCreate(
+            [
+                'league_member_id' => $request->league_member_id,
+                'player_id'        => $request->player_id,
+            ],
+            [
+                'roster_position' => $request->roster_position,
+                'is_rostered'     => $request->input('is_rostered', 1),
+            ]
+        );
+
+        try {
+            $player       = $rosteredPlayer->player;
+            $leagueMember = LeagueMember::find($request->league_member_id);
+            $teamName     = $leagueMember?->team_name ?? 'Unknown team';
+            $playerName   = $player?->player_name ?? 'Unknown player';
+
+            Log::create([
+                'league_member_id' => $request->league_member_id,
+                'type'             => 'add_player',
+                'message'          => "{$teamName} added {$playerName} to their roster",
+            ]);
+        } catch (\Exception $e) {
+            \Log::warning('Failed to write add_player log: ' . $e->getMessage());
+        }
 
         return response()->json([
             'status'  => 'success',
@@ -106,12 +127,49 @@ class RosteredPlayersController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Rostered player not found'], 404);
         }
 
+        $isBeingDropped = $request->input('is_rostered') == 0 && $rosteredPlayer->is_rostered == 1;
+        $isBeingAdded   = $request->input('is_rostered') == 1 && $rosteredPlayer->is_rostered == 0;
+
         $rosteredPlayer->update([
             'league_member_id' => $request->input('league_member_id', $rosteredPlayer->league_member_id),
             'player_id'        => $request->player_id,
             'roster_position'  => $request->roster_position,
             'is_rostered'      => $request->input('is_rostered', 1),
         ]);
+
+        if ($isBeingDropped) {
+            try {
+                $player       = $rosteredPlayer->player;
+                $leagueMember = LeagueMember::find($rosteredPlayer->league_member_id);
+                $teamName     = $leagueMember?->team_name ?? 'Unknown team';
+                $playerName   = $player?->player_name ?? 'Unknown player';
+
+                Log::create([
+                    'league_member_id' => $rosteredPlayer->league_member_id,
+                    'type'             => 'drop_player',
+                    'message'          => "{$teamName} dropped {$playerName} from their roster and is now available on waivers",
+                ]);
+            } catch (\Exception $e) {
+                \Log::warning('Failed to write drop_player log: ' . $e->getMessage());
+            }
+        }
+
+        if ($isBeingAdded) {
+            try {
+                $player       = $rosteredPlayer->player;
+                $leagueMember = LeagueMember::find($rosteredPlayer->league_member_id);
+                $teamName     = $leagueMember?->team_name ?? 'Unknown team';
+                $playerName   = $player?->player_name ?? 'Unknown player';
+
+                Log::create([
+                    'league_member_id' => $rosteredPlayer->league_member_id,
+                    'type'             => 'add_player',
+                    'message'          => "{$teamName} added {$playerName} to their roster from waivers",
+                ]);
+            } catch (\Exception $e) {
+                \Log::warning('Failed to write add_player log: ' . $e->getMessage());
+            }
+        }
 
         return response()->json(['status' => 'success', 'message' => 'Rostered player updated successfully']);
     }
