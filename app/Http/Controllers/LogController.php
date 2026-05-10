@@ -43,7 +43,8 @@ class LogController extends Controller
   {
     $logs = Log::join('league_members', 'logging.league_member_id', '=', 'league_members.id')
       ->where('league_members.league_id', $league_id)
-      ->select('logging.id', 'logging.league_member_id', 'logging.type', 'logging.message')
+      ->select('logging.id', 'logging.league_member_id', 'logging.type', 'logging.message', 'logging.created_at', 'league_members.team_name')
+      ->orderBy('logging.created_at', 'desc')
       ->get();
 
     return response()->json($logs);

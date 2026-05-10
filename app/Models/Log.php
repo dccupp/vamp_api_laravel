@@ -14,4 +14,8 @@ class Log extends Model
     'type',
     'message',
   ];
+
+  protected $casts = [
+    'created_at' => 'datetime',
+  ];
 }
