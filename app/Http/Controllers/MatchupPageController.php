@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\LeagueMember;
 use App\Models\NFLSchedule;
 use App\Models\RosteredPlayer;
+use App\Models\RosteredPlayerWeeklyScore;
 use App\Models\Schedule;
 use App\Models\ScoringRule;
 use App\Models\WeeklyStat;
@@ -15,6 +16,7 @@ class MatchupPageController extends Controller
     {
         $week = (int) request('week', 0);
         $year = (int) request('year', (int) date('Y'));
+        $historical = filter_var(request('historical', false), FILTER_VALIDATE_BOOLEAN);
 
         $schedule = Schedule::find($schedule_id);
         if (!$schedule) {
@@ -26,6 +28,15 @@ class MatchupPageController extends Controller
 
         if (!$homeMember || !$awayMember) {
             return response()->json(['status' => 'error', 'message' => 'League members not found'], 404);
+        }
+
+        if ($historical) {
+            return response()->json([
+                'home_roster'    => $this->buildHistoricalRoster($league_id, $schedule->home_league_member, $week, $year),
+                'away_roster'    => $this->buildHistoricalRoster($league_id, $schedule->away_league_member, $week, $year),
+                'home_team_name' => $homeMember->team_name ?? 'Unknown',
+                'away_team_name' => $awayMember->team_name ?? 'Unknown',
+            ]);
         }
 
         $scoringRules = ScoringRule::find($league_id);
@@ -141,5 +152,40 @@ class MatchupPageController extends Controller
             'home_team_name' => $homeMember->team_name ?? 'Unknown',
             'away_team_name' => $awayMember->team_name ?? 'Unknown',
         ]);
+    }
+
+    private function buildHistoricalRoster($league_id, $league_member_id, $week, $year)
+    {
+        $scores = RosteredPlayerWeeklyScore::where('league_id', $league_id)
+            ->where('league_member_id', $league_member_id)
+            ->where('week', $week)
+            ->where('year', $year)
+            ->get();
+
+        $rosteredPlayers = RosteredPlayer::with('player')
+            ->whereIn('id', $scores->pluck('rostered_player_id'))
+            ->get()
+            ->keyBy('id');
+
+        return $scores->map(function ($score) use ($rosteredPlayers) {
+            $rp = $rosteredPlayers->get($score->rostered_player_id);
+            if (!$rp || !$rp->player) return null;
+
+            return [
+                'id'                 => $rp->id,
+                'league_member_id'   => $rp->league_member_id,
+                'player_id'          => $rp->player_id,
+                'is_rostered'        => true,
+                'roster_position'    => strtoupper($score->roster_position),
+                'player_name'        => $rp->player->player_name ?? 'Unknown',
+                'position'           => $rp->player->position ?? 'Unknown',
+                'team'               => $rp->player->team ?? 'Unknown',
+                'external_player_id' => $rp->player->external_player_id,
+                'is_injured'         => false,
+                'fantasyScore'       => (float) $score->fantasy_points,
+                'weeklyStats'        => null,
+                'schedule'           => null,
+            ];
+        })->filter()->values();
     }
 }
