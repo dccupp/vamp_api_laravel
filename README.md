@@ -1,64 +1,127 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
+# Vamp API — Laravel Backend
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+RESTful API backend for Vampire League Fantasy Football. Built with Laravel 8, it handles all league management, player rosters, scoring, waivers, draft picks, and NFL schedule data consumed by the [vampire-league](../vampire-league) frontend.
 
-## About Laravel
+## Tech Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Laravel 8** (PHP 7.3+ / 8.0+)
+- **MySQL** (primary database)
+- **Laravel Sanctum** for API token authentication
+- **fruitcake/laravel-cors** for CORS handling
+- **Laravel Sail** for Docker support
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Prerequisites
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- PHP 7.3+ or 8.0+
+- Composer
+- MySQL
+- A local web server (WAMP, XAMPP, Laravel Valet, or Docker via Sail)
 
-## Learning Laravel
+## Getting Started
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1500 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Update `.env` with your database credentials, then run migrations:
 
-## Laravel Sponsors
+```bash
+php artisan migrate
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+The API will be available at `http://localhost:8080/api` (or whichever host/port your server uses).
 
-### Premium Partners
+## Environment Configuration
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+Key `.env` values to set for local development:
 
-## Contributing
+```
+APP_URL=http://localhost:8080
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=your_db_name
+DB_USERNAME=root
+DB_PASSWORD=
+```
 
-## Code of Conduct
+CORS is pre-configured to allow requests from `http://localhost:3000` (the React dev server) and `https://vampireleaguefootball.com`.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## API Overview
 
-## Security Vulnerabilities
+All routes are prefixed with `/api`. The API exposes 112+ endpoints across 22 controllers.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+| Resource | Prefix | Description |
+|---|---|---|
+| Users | `/users` | Registration, login, profile |
+| Leagues | `/leagues` | CRUD, activation |
+| League Members | `/league_members` | Membership, team names, FAAB |
+| Players | `/players` | Player registration and lookup |
+| Rostered Players | `/rostered_players` | Roster assignments |
+| Roster Rules | `/roster_rules` | Per-league lineup config |
+| Roster Types | `/roster_types` | Regular / Vampire type definitions |
+| Scoring Rules | `/scoring_rules` | Per-league scoring config |
+| Weekly Stats | `/weekly_stats` | Player weekly performance |
+| Yearly Stats | `/yearly_stats` | Aggregated season stats |
+| Rostered Player Scores | `/rostered_player_weekly_scores` | Scored output per roster slot |
+| Draft Picks | `/draft_picks` | Draft tracking |
+| Waiver Claims | `/waiver_claims` | FAAB claim processing |
+| Waiver Rules | `/waiver_rules` | Per-league waiver config |
+| NFL Schedule | `/nfl_schedules` | NFL game schedule data |
+| Fantasy Weeks | `/fantasy_weeks` | Fantasy season week definitions |
+| Schedules | `/schedules` | League matchup schedule |
+| League Divisions | `/league_divisions` | Division management |
+| Logs | `/logs` | Activity audit trail |
+| Matchup Page | `/matchups/getMatchupPageData` | Composite matchup endpoint |
+| Waiver Page | `/waivers/getWaiverPageData` | Composite waiver endpoint |
 
-## License
+## Project Structure
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```
+app/
+├── Http/
+│   ├── Controllers/    # 22 controllers
+│   └── Middleware/     # CORS, auth, rate limiting
+├── Models/             # 19 Eloquent models
+└── Providers/
+database/
+├── migrations/
+├── factories/
+└── seeders/
+routes/
+└── api.php             # All API route definitions
+```
+
+## Key Models
+
+- **User** / **League** / **LeagueMember** — core identity and membership
+- **Player** / **RosteredPlayer** — player pool and roster assignments (Player uses UUID primary key)
+- **RosterRule** / **RosterType** — lineup configuration (supports separate Regular and Vampire types)
+- **ScoringRule** / **WeeklyStat** / **RosteredPlayerWeeklyScore** — scoring pipeline
+- **WaiverClaim** / **WaiverRule** — FAAB waiver system
+- **DraftPick** — draft history
+- **NFLSchedule** / **FantasyWeek** / **Schedule** — schedule management
+- **Log** — per-league activity log
+
+## Rate Limiting
+
+API routes are throttled at **300 requests per minute** per user.
+
+## Running Tests
+
+```bash
+php artisan test
+```
+
+Tests live in `tests/Unit` and `tests/Feature`. PHPUnit is configured via `phpunit.xml`.
+
+## Docker
+
+A `.env.docker` file and Laravel Sail configuration are included for containerized development:
+
+```bash
+./vendor/bin/sail up
+```
